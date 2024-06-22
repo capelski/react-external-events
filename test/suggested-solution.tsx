@@ -6,8 +6,8 @@ export const SuggestedSolution: React.FC<ProblemDescriptionProps> = (props) => {
   const [messages, setMessages] = useState<ProblemDescriptionState>([]);
 
   const externalMessages = useExternalEvents<string>();
-  externalMessages.processNextEvent((message) => {
-    const nextMessages = [...messages, message];
+  externalMessages.processNext((incomingMessage: string) => {
+    const nextMessages = [...messages, incomingMessage];
     setMessages(nextMessages);
 
     // For testing purposes, allow the parent component to evaluate the state before and after

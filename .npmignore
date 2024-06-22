@@ -1,0 +1,9 @@
+.vscode/
+!distribution/
+node_modules/
+source/
+test/
+.gitgnore
+.prettierrc
+jest.config.js
+tsconfig.json

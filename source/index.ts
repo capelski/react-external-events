@@ -1,38 +1,39 @@
 import { useEffect, useMemo, useState } from 'react';
 
-/**
- * Some events triggered outside the React render cycle need to get the latest React state.
- * However, since the event handler is only registered once, the handler doesn't have access
- * to the latest state at the moment each event is processed.
- *
- * Instead of processing each event in the event handler itself, store the event, force a new
- * render cycle and process the event via useEffect, where the latest state is available.
- */
-export function useExternalEvents<TEventData>() {
+export type ProcessNextArguments<TData> =
+  | [handler: (c: TData) => void, batch?: false]
+  | [handler: (c: TData[]) => void, batch: true];
+
+export type ExternalEventsFunctions<TData> = {
+  /** Function to process external events, one at a time or in batch. Must be called in
+   * every render cycle. */
+  processNext: (...args: ProcessNextArguments<TData>) => void;
+  /** Function to register external events. Must be called in external event handlers. */
+  registerEvent: (eventData: TData) => void;
+};
+
+/** Returns a function to register external events and a function to process them */
+export function useExternalEvents<TData>(): ExternalEventsFunctions<TData> {
   const [, forceUpdate] = useState({});
 
   return useMemo(() => {
-    const pendingEvents: TEventData[] = [];
+    const pendingEvents: TData[] = [];
 
     return {
-      registerEvent: (eventData: TEventData) => {
+      processNext: (...[handler, batch]: ProcessNextArguments<TData>) => {
+        useEffect(() => {
+          if (pendingEvents.length > 0) {
+            if (batch) {
+              handler(pendingEvents.splice(0));
+            } else {
+              handler(pendingEvents.shift()!);
+            }
+          }
+        }, [pendingEvents.length]);
+      },
+      registerEvent: (eventData: TData) => {
         pendingEvents.push(eventData);
         forceUpdate({});
-      },
-      processNextEvent: (handler: (c: TEventData) => void) => {
-        useEffect(() => {
-          if (pendingEvents.length > 0) {
-            handler(pendingEvents.shift()!);
-          }
-        }, [pendingEvents.length]);
-      },
-      processNextEvents: (handler: (c: TEventData[]) => void) => {
-        useEffect(() => {
-          if (pendingEvents.length > 0) {
-            const batch = pendingEvents.splice(0);
-            handler(batch);
-          }
-        }, [pendingEvents.length]);
       },
     };
   }, []);

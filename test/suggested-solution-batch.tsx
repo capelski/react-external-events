@@ -6,13 +6,13 @@ export const SuggestedSolutionBatch: React.FC<ProblemDescriptionProps> = (props)
   const [messages, setMessages] = useState<ProblemDescriptionState>([]);
 
   const externalMessages = useExternalEvents<string>();
-  externalMessages.processNextEvents((incomingMessages) => {
+  externalMessages.processNext((incomingMessages: string[]) => {
     const nextMessages = [...messages, ...incomingMessages];
     setMessages(nextMessages);
 
     // For testing purposes, allow the parent component to evaluate the state before and after
     props.onSocketMessageProcessed(messages, nextMessages);
-  });
+  }, true);
 
   useEffect(() => {
     // Subscribing to the external messages on a useEffect as an example,
