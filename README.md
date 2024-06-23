@@ -18,7 +18,7 @@ React hook that returns two functions:
 export const Component: React.FC = (props) => {
   const externalMessages = useExternalEvents<string>();
 
-  externalMessages.processNext((message: string) => {
+  externalMessages.processNext((message) => {
     /* Update state */
   });
 
@@ -34,9 +34,12 @@ export const Component: React.FC = (props) => {
 export const Component: React.FC = (props) => {
   const externalMessages = useExternalEvents<string>();
 
-  externalMessages.processNext((messages: string[]) => {
-    /* Update state */
-  }, true);
+  externalMessages.processNext(
+    (messages) => {
+      /* Update state */
+    },
+    { batch: true },
+  );
 
   useEffect(() => {
     webSocket.onMessage(externalMessages.registerEvent);
@@ -48,7 +51,7 @@ export const Component: React.FC = (props) => {
 
 ## Motivation
 
-Some browser events (e.g. web sockets, web rtc, etc.) are triggered outside React's lifecycle. Because the handlers for those events are usually defined only once, the event handlers don't have access to the latest state of the React function components. Consider the following component:
+Some browser events (e.g. web sockets, web rtc, etc.) are triggered outside React's lifecycle. Because the handlers for those events are usually defined only once, during components' initialization, the event handlers don't have access to the latest state of the React function components. Consider the following component:
 
 ```typescript
 import React, { useEffect, useState } from 'react';
@@ -72,12 +75,12 @@ export const Chat: React.FC</* ... */> = (props) => {
 };
 ```
 
-Every time a new message arrives the component's state is updated, returning a new `messages` variable. However, the `messages` variable in the `onMessage` event handler is a reference to the initial state of the component (i.e. an empty array). This causes the event handler to pass an empty array when updating the component's state, discarding previously received messages for each new message that arrives.
+Every time a new message is received the component's state is updated, returning a new `messages` variable. However, the `messages` variable in the `onMessage` event handler is a reference to the initial state of the component (i.e. an empty array). This causes the event handler to pass an empty array when updating the component's state, discarding previously received messages for each new message.
 
-One way of solving this, for example, would be to re-define the event handler every time an event is processed. `react-external-events` takes a simpler approach: splitting the event handlers into two functions.
+One way of solving this, for example, would be to re-define the `onMessage` event handler every time an event is processed. `react-external-events` takes a simpler approach: splitting the event handlers into two functions.
 
-- The first function (i.e. `registerEvent`) is defined only once and it doesn't have access to the latest component's state. It registers the external events, without processing them, and forces a render cycle of the component.
-- The second function (i.e. `processNext`) is re-defined in every render cycle, and it therefore has access to the latest component's state. It processes pending events, if there are any, and potentially updates the component's state.
+- The first function (i.e. `registerEvent`) is executed on every external event and it doesn't have access to the latest component's state. It registers the external events, without processing them, and forces a render cycle of the component.
+- The second function (i.e. `processNext`) is executed on every render cycle, and it therefore has access to the latest component's state. It processes pending events, if there are any, and potentially updates the component's state.
 
 A "picture" is worth a thousand words:
 
@@ -89,7 +92,7 @@ export const Chat: React.FC</* ... */> = (props) => {
   const [messages, setMessages] = useState<string[]>([]);
   const externalMessages = useExternalEvents<string>();
 
-  externalMessages.processNext((message: string) => {
+  externalMessages.processNext((message) => {
     setMessages([...messages, message]);
   });
 

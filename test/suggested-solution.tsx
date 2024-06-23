@@ -6,7 +6,7 @@ export const SuggestedSolution: React.FC<ProblemDescriptionProps> = (props) => {
   const [messages, setMessages] = useState<ProblemDescriptionState>([]);
 
   const externalMessages = useExternalEvents<string>();
-  externalMessages.processNext((incomingMessage: string) => {
+  externalMessages.processNext((incomingMessage) => {
     const nextMessages = [...messages, incomingMessage];
     setMessages(nextMessages);
 
