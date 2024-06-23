@@ -3,6 +3,7 @@
   "version": "1.0.2",
   "description": "Simple react hook to access the current state of a component in external event handlers",
   "main": "distribution/index.js",
+  "types": "distribution/index.d.ts",
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf distribution",
